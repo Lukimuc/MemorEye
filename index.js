@@ -1,4 +1,7 @@
 import Config from "./Config.js";
+//import * as webgazer from "WebGazer";
+
+//import webgazer from "https://github.com/brownhci/WebGazer/blob/master/www/webgazer.js";
 
 let memoryArray,
     score,
@@ -6,6 +9,39 @@ let memoryArray,
     cards,
     indexCardOpen1,
     indexCardOpen2;
+
+//var webgazer = window.webgazer;
+
+
+
+
+var webgazer = window.webgazer;
+console.log(webgazer);
+    webgazer.setTracker("js_objectdetect"); //set a tracker module
+    webgazer.setRegression("weightedRidge"); //set a regression module
+    webgazer.showVideoPreview(true) /* shows all video previews */
+            .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+   
+
+    
+
+    webgazer.setGazeListener(function(data, elapsedTime) {
+        console.log(data);
+        console.log(elapsedTime);
+        if (data == null) {
+            return;
+        }
+        var xprediction = data.x; //these x coordinates are relative to the viewport
+        var yprediction = data.y; //these y coordinates are relative to the viewport
+        console.log(elapsedTime); //elapsed time is based on time since begin was called#
+        console.log(xprediction);
+        console.log(yprediction);
+
+    }).begin();
+
+    
+
+                    
 
 function init() {
     scoreText = document.getElementById("score_txt");
