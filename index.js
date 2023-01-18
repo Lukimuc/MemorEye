@@ -1,6 +1,7 @@
 import Config from "./Config.js";
 //import * as webgazer from "WebGazer";
 
+
 //import webgazer from "https://github.com/brownhci/WebGazer/blob/master/www/webgazer.js";
 
 let memoryArray,
@@ -10,17 +11,60 @@ let memoryArray,
     indexCardOpen1,
     indexCardOpen2;
 
-//var webgazer = window.webgazer;
+
+var GazeCloudAPI = window.GazeCloudAPI;
+
+GazeCloudAPI.StartEyeTracking();
+
+GazeCloudAPI.OnCalibrationComplete = function(){
+    console.log('gaze Calibration Complete')
+}         
+GazeCloudAPI.OnCamDenied = function(){ 
+    console.log('camera access denied')  
+}         
+GazeCloudAPI.OnError = function(msg){ console.log('err: ' + msg) }        
+GazeCloudAPI.UseClickRecalibration = true;
+
+function PlotGaze(GazeData) {
+    console.log("X: "+GazeData.GazeX);
+    console.log("Y: "+GazeData.GazeY);
+    /*document.getElementById("GazeData").innerHTML = "GazeX: " + GazeData.GazeX + " GazeY: " + GazeData.GazeY;
+    document.getElementById("HeadPoseData").innerHTML = " HeadX: " + GazeData.HeadX + " HeadY: " + GazeData.HeadY + " HeadZ: " + GazeData.HeadZ;
+    document.getElementById("HeadRotData").innerHTML = " Yaw: " + GazeData.HeadYaw + " Pitch: " + GazeData.HeadPitch + " Roll: " + GazeData.HeadRoll;*/
+    
+    var x = GazeData.docX;
+    var y = GazeData.docY;
+    
+    var gaze = document.getElementById("gaze");
+    x -= gaze .clientWidth/2;
+    y -= gaze .clientHeight/2;
+    
+    
+
+    gaze.style.left = x + "px";
+    gaze.style.top = y + "px";
+
+    
+    if(GazeData.state != 0)
+    {
+        if( gaze.style.display  == 'block')
+        gaze  .style.display = 'none';
+    }
+    else
+    {
+        if( gaze.style.display  == 'none')
+        gaze  .style.display = 'block';
+    }
+}
+GazeCloudAPI.OnResult = PlotGaze;
 
 
-
-
-var webgazer = window.webgazer;
+/*var webgazer = window.webgazer;
 console.log(webgazer);
     webgazer.setTracker("js_objectdetect"); //set a tracker module
     webgazer.setRegression("weightedRidge"); //set a regression module
-    webgazer.showVideoPreview(true) /* shows all video previews */
-            .showPredictionPoints(true); /* shows a square every 100 milliseconds where current prediction is */
+    webgazer.showVideoPreview(true) // shows all video previews 
+            .showPredictionPoints(true); // shows a square every 100 milliseconds where current prediction is 
    
 
     
@@ -37,7 +81,8 @@ console.log(webgazer);
         console.log(xprediction);
         console.log(yprediction);
 
-    }).begin();
+    }).begin();*/
+    
 
     
 
