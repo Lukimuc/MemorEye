@@ -4,125 +4,59 @@ import Config from "./Config.js";
 
 //import webgazer from "https://github.com/brownhci/WebGazer/blob/master/www/webgazer.js";
 
-let memoryArray,
+var memoryArray,
     score,
     scoreText,
     cards,
     indexCardOpen1,
-    indexCardOpen2;
+    indexCardOpen2,
+    memoryCards,
+    GazeCloudAPI,
+    timerInterval,
+    count,
+    previousElement,
+    currentElement,
+    timerMatch,
+    canOpenCards,
+    timerRunning;
 
-
-var GazeCloudAPI = window.GazeCloudAPI;
-
-GazeCloudAPI.StartEyeTracking();
-
-GazeCloudAPI.OnCalibrationComplete = function () {
-    console.log('gaze Calibration Complete')
-}
-GazeCloudAPI.OnCamDenied = function () {
-    console.log('camera access denied')
-}
-
-
-GazeCloudAPI.OnError = function (msg) { console.log('err: ' + msg) }
-GazeCloudAPI.UseClickRecalibration = true;
-
-function PlotGaze(GazeData) {
-    //console.log("X: "+GazeData.GazeX);
-    //console.log("Y: "+GazeData.GazeY);
-    /*document.getElementById("GazeData").innerHTML = "GazeX: " + GazeData.GazeX + " GazeY: " + GazeData.GazeY;
-    document.getElementById("HeadPoseData").innerHTML = " HeadX: " + GazeData.HeadX + " HeadY: " + GazeData.HeadY + " HeadZ: " + GazeData.HeadZ;
-    document.getElementById("HeadRotData").innerHTML = " Yaw: " + GazeData.HeadYaw + " Pitch: " + GazeData.HeadPitch + " Roll: " + GazeData.HeadRoll;*/
-
-    var x = GazeData.docX;
-    var y = GazeData.docY;
-
-    var gaze = document.getElementById("gaze");
-    x -= gaze.clientWidth / 2;
-    y -= gaze.clientHeight / 2;
-
-    var dwellTime = GazeData.GazeDwellTime;
-
-    // Get the element at the gaze coordinates
-    var element = document.elementFromPoint(x, y);
-    // Check if the element is a card
-    var count = 0;
-    var previousElement = null;
-    // trigger onclick
-    setInterval(function () {
-        if (element.className.indexOf("card") > -1) {
-            console.log("contains card")
-            if (previousElement === element) {
-                count++;
-                if (count === 2) {
-
-                    element.click();
-                    count = 0;
-                    previousElement = null;
-                }
-            } else {
-                count = 0;
-                previousElement = element;
-            }
-        }
-    }, 1000);
-
-
-    gaze.style.left = x + "px";
-    gaze.style.top = y + "px";
-
-
-    if (GazeData.state != 0) {
-        if (gaze.style.display == 'block')
-            gaze.style.display = 'none';
-    }
-    else {
-        if (gaze.style.display == 'none')
-            gaze.style.display = 'block';
-    }
-}
-GazeCloudAPI.OnResult = PlotGaze;
-
-
-/*var webgazer = window.webgazer;
-console.log(webgazer);
-    webgazer.setTracker("js_objectdetect"); //set a tracker module
-    webgazer.setRegression("weightedRidge"); //set a regression module
-    webgazer.showVideoPreview(true) // shows all video previews 
-            .showPredictionPoints(true); // shows a square every 100 milliseconds where current prediction is 
-   
-
-    
-
-    webgazer.setGazeListener(function(data, elapsedTime) {
-        console.log(data);
-        console.log(elapsedTime);
-        if (data == null) {
-            return;
-        }
-        var xprediction = data.x; //these x coordinates are relative to the viewport
-        var yprediction = data.y; //these y coordinates are relative to the viewport
-        console.log(elapsedTime); //elapsed time is based on time since begin was called#
-        console.log(xprediction);
-        console.log(yprediction);
-
-    }).begin();*/
-
-
-
-
+// these methods are called at start
+init();
 
 
 function init() {
     scoreText = document.getElementById("score_txt");
     score = 0;
+    count = 0;
+    canOpenCards = true;
+    timerRunning = false;
     memoryArray = [];
     cards = document.querySelectorAll(".cardImg");
+    memoryCards = document.querySelectorAll(".card");
     indexCardOpen1 = undefined;
     indexCardOpen2 = undefined;
+    GazeCloudAPI = window.GazeCloudAPI;
 
     updateScoreText();
     initMemoryArray();
+    setClickListeners();
+    initGazeCloudAPI();
+}
+
+
+function initGazeCloudAPI() {
+    GazeCloudAPI.StartEyeTracking();
+    GazeCloudAPI.OnCalibrationComplete = function () {
+        console.log('gaze Calibration Complete')
+        GazeCloudAPI.OnResult = PlotGaze;
+    }
+    GazeCloudAPI.OnCamDenied = function () {
+        console.log('camera access denied')
+    }
+
+    GazeCloudAPI.OnError = function (msg) { console.log('err: ' + msg) }
+    GazeCloudAPI.UseClickRecalibration = true;
+
 }
 
 // initalizes the memoryArray
@@ -138,35 +72,74 @@ function initMemoryArray() {
     }
 
     shuffleCards();
+}
 
-    revealMemoryCard(10);
-    revealMemoryCard(11);
+
+function PlotGaze(GazeData) {
+    var x = GazeData.docX;
+    var y = GazeData.docY;
+
+    var gaze = document.getElementById("gaze");
+    x -= gaze.clientWidth / 2;
+    y -= gaze.clientHeight / 2;
+
+    var dwellTime = GazeData.GazeDwellTime;
+
+    // Get the element at the gaze coordinates
+    currentElement = document.elementFromPoint(x, y);
+    if(currentElement != null) {
+        previousElement = currentElement;
+        setTimeout(() => {
+            startTimer();
+        }, Config.TICK_SPEED);
+    }
+
+
+    gaze.style.left = x + "px";
+    gaze.style.top = y + "px";
+
+
+    if (GazeData.state != 0) {
+        if (gaze.style.display == 'block')
+            gaze.style.display = 'none';
+    }
+    else {
+        if (gaze.style.display == 'none')
+            gaze.style.display = 'block';
+    }
 }
 
 // shuffles all the cards in the memoryArray
 function shuffleCards() {
     memoryArray.sort(() => Math.random() - 0.5);
     console.log("Shuffled cards!");
-    console.log(memoryArray);
 }
 
 // shows the image (path to image saved in memoryArray) for a card
-function revealMemoryCard(index) {
+function revealMemoryCard(card) {
+    if(timerMatch) { return; }
+
+    let index = getIndexOfCard(card);
+    if(index === -1) { return; }
+
+    if((card.classList.contains("hidden"))) { return; }
+
     console.log("showing card " + index);
     cards[index].classList.remove("hidden");
     cards[index].src = memoryArray[index].toString();
-
+    count = 0;
+    
     if (indexCardOpen1 === undefined) {
         indexCardOpen1 = index;
     } else {
         indexCardOpen2 = index;
         checkForMatch();
-    }
+    }   
 }
 
 // hides the images of the currently shown cards, when there is no match found
 function hideMemoryCards() {
-    console.log("hiding image " + memoryArray[indexCardOpen1] + " and " + memoryArray[indexCardOpen2]);
+    //console.log("hiding image " + memoryArray[indexCardOpen1] + " and " + memoryArray[indexCardOpen2]);
 
     cards[indexCardOpen1].classList.add("hidden");
     cards[indexCardOpen1].src = "";
@@ -175,6 +148,50 @@ function hideMemoryCards() {
 
     indexCardOpen1 = undefined;
     indexCardOpen2 = undefined;
+    timerMatch = undefined;
+}
+
+function startTimer() {
+    console.log(currentElement);
+    if(!currentElement.classList.contains('card')) {
+        count = 0;
+        clearInterval(timerInterval);
+        timerRunning = false;
+    }
+    if(timerRunning) { return; }
+    if(currentElement !== null && currentElement !== undefined) {
+        console.log("new timer...");
+        timerRunning = true;
+        timerInterval = setInterval(() => {
+            updateTimer();
+        }, Config.TIMER_INTERVAL_STEP);
+    }
+}
+
+function updateTimer() {
+if((currentElement !== null) && (currentElement.classList.contains('card'))) {
+        console.log(count);
+        console.log(timerInterval);
+        count++;
+        if(count === ((Config.TIMER_LOOK_TOTAL/Config.TIMER_INTERVAL_STEP)-1)) {
+            console.log("Timer up! clicking....")
+            count = 0;
+            currentElement.click();
+            clearInterval(timerInterval);
+            timerRunning = false;
+        }
+    } else {
+        count = 0;
+        clearInterval(timerInterval);
+    }
+}
+
+function setClickListeners() {
+    memoryCards.forEach(element => {
+        element.addEventListener("click", function() {
+            revealMemoryCard(element);
+        })
+    });
 }
 
 // checks whether the path-names of two images match, is called only when two images are shown
@@ -188,7 +205,7 @@ function checkForMatch() {
         updateScoreText();
     } else if ((indexCardOpen1 || indexCardOpen2) !== undefined) {
         console.log("No match found for " + indexCardOpen1 + " and " + indexCardOpen2);
-        setTimeout(hideMemoryCards, 5000);
+        timerMatch = setTimeout(hideMemoryCards, Config.TIMER_MATCH_TOTAL);
     }
 }
 
@@ -197,6 +214,14 @@ function updateScoreText() {
     scoreText.innerHTML = Config.SCORE_TEXT + score;
 }
 
+function getIndexOfCard(card) {
+    let index = -1;
+    for (let i=0; i< cards.length; i++) {
+        if(cards[i].parentElement.id === card.id) {
+            index = i;
+        }
+    }
 
-// these methods are called at start
-init();
+    return index;
+}
+
