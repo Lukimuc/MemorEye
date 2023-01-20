@@ -9,8 +9,8 @@ let memoryArray,
     scoreText,
     cards,
     indexCardOpen1,
-    indexCardOpen2;
-
+    indexCardOpen2,
+    wonText;
 
 var GazeCloudAPI = window.GazeCloudAPI;
 
@@ -136,7 +136,6 @@ function initMemoryArray() {
         memoryArray[i + 1] = imgArray[rand];
         imgArray.splice(rand, 1);
     }
-
     shuffleCards();
 
     revealMemoryCard(10);
@@ -190,11 +189,22 @@ function checkForMatch() {
         console.log("No match found for " + indexCardOpen1 + " and " + indexCardOpen2);
         setTimeout(hideMemoryCards, 5000);
     }
+
+    // game is won when max score is reached
+    if(score == (memoryArray.length / 2)){
+        gameWon();
+    }
 }
 
 // updates the score text from the html
 function updateScoreText() {
     scoreText.innerHTML = Config.SCORE_TEXT + score;
+}
+
+// diplays game won text
+function gameWon(){
+    wonText = document.getElementById("won_txt");
+    wonText.style.display = "block";
 }
 
 
