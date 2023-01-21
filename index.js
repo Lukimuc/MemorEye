@@ -18,7 +18,8 @@ var memoryArray,
     currentElement,
     timerMatch,
     canOpenCards,
-    timerRunning;
+    timerRunning,
+    wonText;
 
 // these methods are called at start
 init();
@@ -70,7 +71,6 @@ function initMemoryArray() {
         memoryArray[i + 1] = imgArray[rand];
         imgArray.splice(rand, 1);
     }
-
     shuffleCards();
 }
 
@@ -207,11 +207,27 @@ function checkForMatch() {
         console.log("No match found for " + indexCardOpen1 + " and " + indexCardOpen2);
         timerMatch = setTimeout(hideMemoryCards, Config.TIMER_MATCH_TOTAL);
     }
+
+    // game is won when max score is reached
+    if(score == (memoryArray.length / 2)){
+        gameWon();
+    }
+
+    // game is won when max score is reached
+    if(score == (memoryArray.length / 2)){
+        gameWon();
+    }
 }
 
 // updates the score text from the html
 function updateScoreText() {
     scoreText.innerHTML = Config.SCORE_TEXT + score;
+}
+
+// diplays game won text
+function gameWon(){
+    wonText = document.getElementById("won_txt");
+    wonText.style.display = "block";
 }
 
 function getIndexOfCard(card) {

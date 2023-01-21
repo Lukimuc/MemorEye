@@ -66,6 +66,12 @@ body {
 
 #div13 { grid-area: 1 / 1 / 2 / 2; }
 
+.div14 {
+    grid-area: 2 / 3 / span 1 / span 2;
+    background-color: white;
+    display: none; 
+}
+
 .card {
     border: grey;
     height: 200px;
@@ -95,6 +101,12 @@ body {
 
 .hidden {
     display: none;
+}
+
+h1 {
+    text-align: center;
+    font-weight: bold;
+    font-size: 300%;
 }
 
 h2 {
