@@ -212,11 +212,6 @@ function checkForMatch() {
     if(score == (memoryArray.length / 2)){
         gameWon();
     }
-
-    // game is won when max score is reached
-    if(score == (memoryArray.length / 2)){
-        gameWon();
-    }
 }
 
 // updates the score text from the html
